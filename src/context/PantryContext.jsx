@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 const PantryContext = createContext(null);
 
-const API_URL = 'https://pantrypal-backend-wine.vercel.app/api';
+const API_URL = 'https://pantrypal-backend-bay.vercel.app/api';
 
 // Get auth token from localStorage
 const getToken = () => localStorage.getItem('pantrypal_token');

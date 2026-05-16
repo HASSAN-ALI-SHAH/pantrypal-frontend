@@ -5,7 +5,7 @@ import { ChefHat, SlidersHorizontal, RefreshCw } from 'lucide-react';
 import RecipeCard from '../components/recipes/RecipeCard';
 import RecipeModal from '../components/recipes/RecipeModal';
 
-const API_URL = 'https://pantrypal-backend-wine.vercel.app/api';
+const API_URL = 'https://pantrypal-backend-bay.vercel.app/api';
 const getToken = () => localStorage.getItem('pantrypal_token');
 
 const FILTERS = ['All Recipes', 'Best Match', 'Easy Only', 'Under 15 Mins'];
