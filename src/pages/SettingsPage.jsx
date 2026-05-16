@@ -62,7 +62,7 @@ const SettingsPage = () => {
 
   const exportJSON = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/settings/export', {
+      const res = await fetch('https://pantrypal-backend-wine.vercel.app/api/settings/export', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

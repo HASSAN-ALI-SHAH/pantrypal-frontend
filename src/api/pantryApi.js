@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://pantrypal-backend-wine.vercel.app/api';
 
 const getHeaders = (token) => ({
   'Content-Type': 'application/json',

@@ -6,7 +6,7 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import toast from 'react-hot-toast';
 
-const API = 'http://localhost:5000/api';
+const API = 'https://pantrypal-backend-wine.vercel.app/api';
 
 // ── OTP digit input boxes ──────────────────────────────────────
 const OTPInput = ({ value, onChange }) => {
