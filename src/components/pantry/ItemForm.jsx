@@ -51,7 +51,7 @@ const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = fals
     if (!form.expiryDate)  errs.expiryDate = 'Expiry date is required';
     if (form.expiryDate && form.entryDate && form.expiryDate < form.entryDate)
       errs.expiryDate = 'Expiry date must be after entry date';
-    if (Number(form.quantity) < 0) errs.quantity = 'Quantity cannot be negative';
+    if (Number(form.quantity) <= 0) errs.quantity = 'Cannot add 0 quantity — must be at least 1';
     if (isEdit && Number(form.currentQuantity) < 0) errs.currentQuantity = 'Current quantity cannot be negative';
     if (Number(form.minQuantity) < 0) errs.minQuantity = 'Minimum quantity cannot be negative';
     setErrors(errs);
