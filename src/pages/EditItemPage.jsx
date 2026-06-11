@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Eye } from 'lucide-react';
 import { usePantry } from '../context/PantryContext';
 import ItemForm from '../components/pantry/ItemForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -12,9 +12,13 @@ const EditItemPage = () => {
   const { id } = useParams();
   const { items, updateItem, deleteItem } = usePantry();
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+
+  const queryParams = new URLSearchParams(location.search);
+  const viewOnly = queryParams.get('viewOnly') === 'true' || location.state?.viewOnly === true;
 
   // id from URL is string; DB ids are numbers — compare both ways
   const item = items.find(i => String(i.id) === String(id));
@@ -59,10 +63,12 @@ const EditItemPage = () => {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 bg-primary-light rounded-xl flex items-center justify-center shadow-blue-sm">
-            <Edit2 size={18} className="text-white" />
+            {viewOnly ? <Eye size={18} className="text-white" /> : <Edit2 size={18} className="text-white" />}
           </div>
           <div>
-            <h1 className="font-heading text-3xl font-bold text-text-dark">Edit Item</h1>
+            <h1 className="font-heading text-3xl font-bold text-text-dark">
+              {viewOnly ? 'Item Details' : 'Edit Item'}
+            </h1>
             <p className="text-text-muted text-sm mt-0.5">{item.name}</p>
           </div>
         </div>
@@ -70,15 +76,17 @@ const EditItemPage = () => {
 
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-card p-8">
-          <ItemForm initialValues={item} onSubmit={handleSubmit} loading={loading} isEdit />
+          <ItemForm initialValues={item} onSubmit={handleSubmit} loading={loading} isEdit readOnly={viewOnly} />
         </div>
 
         {/* Danger zone */}
-        <div className="mt-6 p-5 border-2 border-red-100 bg-red-50 rounded-2xl">
-          <h3 className="font-heading font-semibold text-red-700 mb-1">Danger Zone</h3>
-          <p className="text-red-500 text-sm mb-3">Permanently delete this item from your pantry. This cannot be undone.</p>
-          <Button variant="danger" icon={Trash2} onClick={() => setShowDelete(true)}>Delete Item</Button>
-        </div>
+        {!viewOnly && (
+          <div className="mt-6 p-5 border-2 border-red-100 bg-red-50 rounded-2xl">
+            <h3 className="font-heading font-semibold text-red-700 mb-1">Danger Zone</h3>
+            <p className="text-red-500 text-sm mb-3">Permanently delete this item from your pantry. This cannot be undone.</p>
+            <Button variant="danger" icon={Trash2} onClick={() => setShowDelete(true)}>Delete Item</Button>
+          </div>
+        )}
       </div>
 
       <ConfirmDialog

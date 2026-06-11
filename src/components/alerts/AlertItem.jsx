@@ -52,7 +52,7 @@ const AlertItem = ({ alert, onConsume, onDismiss, index = 0 }) => {
       {/* Actions */}
       <div className="flex flex-col gap-1.5 flex-shrink-0">
         <button
-          onClick={() => navigate(`/edit-item/${alert.itemId}`)}
+          onClick={() => navigate(`/edit-item/${alert.itemId}?viewOnly=true`)}
           className="btn btn-outline btn-sm gap-1 !py-1"
         >
           <Eye size={12} /> View

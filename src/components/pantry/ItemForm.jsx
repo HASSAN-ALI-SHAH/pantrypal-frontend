@@ -14,7 +14,7 @@ const statusOptions = [
   { value: 'discarded', label: 'Discarded' },
 ];
 
-const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = false }) => {
+const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = false, readOnly = false }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name:              initialValues.name             || '',
@@ -89,6 +89,7 @@ const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = fals
             onChange={set('name')}
             error={errors.name}
             success={form.name.length > 2 && !errors.name}
+            disabled={readOnly}
           />
         </div>
 
@@ -98,6 +99,7 @@ const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = fals
           value={form.category}
           onChange={set('category')}
           options={categoryOptions}
+          disabled={readOnly}
         />
 
         {/* Status (edit only) */}
@@ -107,6 +109,7 @@ const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = fals
             value={form.status}
             onChange={set('status')}
             options={statusOptions}
+            disabled={readOnly}
           />
         )}
 
@@ -119,6 +122,7 @@ const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = fals
             min={0}
             onChange={isEdit ? set('currentQuantity') : handleQuantityChange}
             className={`input-field ${((isEdit ? errors.currentQuantity : errors.quantity) ? 'border-red-300 ring-red-100 focus:border-red-400 focus:ring-red-200' : '')}`}
+            disabled={readOnly}
           />
           {(isEdit ? errors.currentQuantity : errors.quantity) && (
             <p className="text-xs text-red-500 mt-1">{isEdit ? errors.currentQuantity : errors.quantity}</p>
@@ -136,12 +140,13 @@ const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = fals
           value={form.unit}
           onChange={set('unit')}
           options={unitOptions}
+          disabled={readOnly}
         />
 
         {/* Entry Date */}
         <div className="mb-4">
           <label className="input-label">Entry Date</label>
-          <input type="date" value={form.entryDate} onChange={set('entryDate')} className="input-field" />
+          <input type="date" value={form.entryDate} onChange={set('entryDate')} className="input-field" disabled={readOnly} />
         </div>
 
         {/* Expiry Date */}
@@ -153,6 +158,7 @@ const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = fals
             onChange={set('expiryDate')}
             className={`input-field ${errors.expiryDate ? 'error' : ''}`}
             min={form.entryDate}
+            disabled={readOnly}
           />
           {errors.expiryDate && <p className="input-error-msg">{errors.expiryDate}</p>}
         </div>
@@ -166,6 +172,7 @@ const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = fals
             rows={3}
             placeholder="Any additional information..."
             className="input-field resize-none"
+            disabled={readOnly}
           />
         </div>
       </div>
@@ -201,6 +208,7 @@ const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = fals
               onChange={set('minQuantity')}
               className={`input-field ${errors.minQuantity ? 'border-red-300 ring-red-100 focus:border-red-400 focus:ring-red-200' : ''}`}
               placeholder="e.g. 1"
+              disabled={readOnly}
             />
             {errors.minQuantity && <p className="text-xs text-red-500 mt-1">{errors.minQuantity}</p>}
           </div>
@@ -215,6 +223,7 @@ const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = fals
                   checked={form.autoAddToGrocery}
                   onChange={setToggle('autoAddToGrocery')}
                   className="sr-only peer"
+                  disabled={readOnly}
                 />
                 <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-primary transition-colors" />
                 <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
@@ -231,12 +240,20 @@ const ItemForm = ({ initialValues = {}, onSubmit, loading = false, isEdit = fals
 
       {/* Action buttons */}
       <div className="flex items-center gap-3 pt-5">
-        <Button type="submit" variant="primary" loading={loading} icon={Save} size="lg">
-          {isEdit ? 'Save Changes' : 'Add to Pantry'}
-        </Button>
-        <Button type="button" variant="ghost" icon={X} onClick={() => navigate(-1)}>
-          Cancel
-        </Button>
+        {!readOnly ? (
+          <>
+            <Button type="submit" variant="primary" loading={loading} icon={Save} size="lg">
+              {isEdit ? 'Save Changes' : 'Add to Pantry'}
+            </Button>
+            <Button type="button" variant="ghost" icon={X} onClick={() => navigate(-1)}>
+              Cancel
+            </Button>
+          </>
+        ) : (
+          <Button type="button" variant="primary" onClick={() => navigate(-1)}>
+            Close Details
+          </Button>
+        )}
       </div>
     </form>
   );
