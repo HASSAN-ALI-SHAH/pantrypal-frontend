@@ -25,19 +25,45 @@ function pantryReducer(state, action) {
     case 'SET_ALERTS':      return { ...state, dbAlerts: action.payload };
 
     case 'ADD_ITEM':        return { ...state, items: [action.payload, ...state.items] };
-    case 'UPDATE_ITEM':
-      return { ...state, items: state.items.map(i => i.id === action.payload.id ? { ...i, ...action.payload } : i) };
-    case 'DELETE_ITEM':     return { ...state, items: state.items.filter(i => i.id !== action.payload) };
+    case 'UPDATE_ITEM': {
+      const updatedItem = action.payload;
+      const isInactiveOrEmpty = updatedItem.status !== 'active' || updatedItem.currentQuantity === 0;
+      return {
+        ...state,
+        items: state.items.map(i => i.id === updatedItem.id ? { ...i, ...updatedItem } : i),
+        dbAlerts: isInactiveOrEmpty
+          ? state.dbAlerts.filter(a => a.itemId !== updatedItem.id)
+          : state.dbAlerts.map(a => a.itemId === updatedItem.id ? { ...a, quantity: updatedItem.currentQuantity, itemName: updatedItem.name } : a)
+      };
+    }
+    case 'DELETE_ITEM':
+      return {
+        ...state,
+        items: state.items.filter(i => i.id !== action.payload),
+        dbAlerts: state.dbAlerts.filter(a => a.itemId !== action.payload)
+      };
     case 'SET_STATUS': {
       const { id, status } = action.payload;
-      return { ...state, items: state.items.map(i => i.id === id ? { ...i, status } : i) };
+      return {
+        ...state,
+        items: state.items.map(i => i.id === id ? { ...i, status } : i),
+        dbAlerts: status !== 'active' ? state.dbAlerts.filter(a => a.itemId !== id) : state.dbAlerts
+      };
     }
     case 'BULK_STATUS': {
       const { ids, status } = action.payload;
-      return { ...state, items: state.items.map(i => ids.includes(i.id) ? { ...i, status } : i) };
+      return {
+        ...state,
+        items: state.items.map(i => ids.includes(i.id) ? { ...i, status } : i),
+        dbAlerts: status !== 'active' ? state.dbAlerts.filter(a => !ids.includes(a.itemId)) : state.dbAlerts
+      };
     }
     case 'BULK_DELETE':
-      return { ...state, items: state.items.filter(i => !action.payload.includes(i.id)) };
+      return {
+        ...state,
+        items: state.items.filter(i => !action.payload.includes(i.id)),
+        dbAlerts: state.dbAlerts.filter(a => !action.payload.includes(a.itemId))
+      };
 
     case 'ADD_GROCERY':
       return { ...state, groceryList: [action.payload, ...state.groceryList] };
@@ -273,14 +299,15 @@ export function PantryProvider({ children }) {
     await apiFetch('/grocery/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) });
   }, []);
 
-  // ── Auto-add to grocery only when quantity drops to 3 or fewer ──
+  // ── Auto-add to grocery only when quantity drops below minimum quantity threshold ──
   useEffect(() => {
     const LOW_STOCK_THRESHOLD = 3;
     state.items.forEach(item => {
+      const threshold = item.minQuantity !== undefined && item.minQuantity !== null ? item.minQuantity : LOW_STOCK_THRESHOLD;
       if (
         item.autoAddToGrocery && item.status === 'active' &&
         item.currentQuantity !== undefined &&
-        item.currentQuantity <= LOW_STOCK_THRESHOLD
+        item.currentQuantity <= threshold
       ) {
         const alreadyInList = state.groceryList.some(g => g.itemName === item.name && !g.purchased);
         if (!alreadyInList) {

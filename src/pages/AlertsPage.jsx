@@ -5,6 +5,7 @@ import AlertPanel from '../components/alerts/AlertPanel';
 import toast from 'react-hot-toast';
 
 import { getExpiryStatus } from '../utils/expiryUtils';
+import { usePantry } from '../context/PantryContext';
 
 const API_URL = 'https://pantrypal-backend-bay.vercel.app/api';
 const authHeaders = () => ({
@@ -20,6 +21,7 @@ const tabs = [
 ];
 
 const AlertsPage = () => {
+  const { markConsumed } = usePantry();
   const [alerts, setAlerts]       = useState([]);
   const [summary, setSummary]     = useState({ expired: 0, critical: 0, soon: 0, total: 0 });
   const [activeTab, setActiveTab] = useState('all');
@@ -57,11 +59,7 @@ const AlertsPage = () => {
 
   const handleConsume = async (itemId) => {
     try {
-      await fetch(`${API_URL}/pantry/${itemId}/status`, {
-        method: 'PATCH',
-        headers: authHeaders(),
-        body: JSON.stringify({ status: 'consumed' })
-      });
+      await markConsumed(itemId);
       // Remove that alert from local list
       setAlerts(prev => prev.filter(a => a.itemId !== itemId));
       toast.success('Marked as consumed! ✅');
