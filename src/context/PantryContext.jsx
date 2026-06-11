@@ -65,8 +65,11 @@ function pantryReducer(state, action) {
         dbAlerts: state.dbAlerts.filter(a => !action.payload.includes(a.itemId))
       };
 
-    case 'ADD_GROCERY':
+    case 'ADD_GROCERY': {
+      const exists = state.groceryList.some(g => g.id === action.payload.id);
+      if (exists) return state;
       return { ...state, groceryList: [action.payload, ...state.groceryList] };
+    }
     case 'UPDATE_GROCERY':
       return { ...state, groceryList: state.groceryList.map(g => g.id === action.payload.id ? action.payload : g) };
     case 'REMOVE_GROCERY':
