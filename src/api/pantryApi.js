@@ -1,6 +1,8 @@
 import { useAuth } from '../context/AuthContext';
 
-const API_URL = 'https://pantrypal-backend-bay.vercel.app/api';
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000/api'
+  : 'https://pantrypal-backend-bay.vercel.app/api';
 
 const getHeaders = (token) => ({
   'Content-Type': 'application/json',

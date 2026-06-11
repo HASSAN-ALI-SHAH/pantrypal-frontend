@@ -5,7 +5,9 @@ import toast from 'react-hot-toast';
 
 const PantryContext = createContext(null);
 
-const API_URL = 'https://pantrypal-backend-bay.vercel.app/api';
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000/api'
+  : 'https://pantrypal-backend-bay.vercel.app/api';
 
 // Get auth token from localStorage
 const getToken = () => localStorage.getItem('pantrypal_token');
@@ -245,7 +247,10 @@ export function PantryProvider({ children }) {
 
   const resetApp = useCallback(async () => {
     dispatch({ type: 'CLEAR_ALL_ITEMS' });
-    await apiFetch('/settings/data', { method: 'DELETE' });
+    const res = await apiFetch('/settings/reset/confirm', { method: 'POST' });
+    if (!res.success) {
+      throw new Error(res.message || 'Reset confirmation failed');
+    }
   }, []);
 
   // importItems: bulk-add via API (best effort)

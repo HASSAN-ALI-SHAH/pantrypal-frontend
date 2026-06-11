@@ -3,7 +3,9 @@ import { createContext, useContext, useState } from 'react';
 const AuthContext = createContext(null);
 const STORAGE_KEY = 'pantrypal_user';
 const TOKEN_KEY   = 'pantrypal_token';
-const API_URL     = 'https://pantrypal-backend-bay.vercel.app/api';
+const API_URL     = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000/api'
+  : 'https://pantrypal-backend-bay.vercel.app/api';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {

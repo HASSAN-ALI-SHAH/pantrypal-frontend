@@ -7,7 +7,9 @@ import toast from 'react-hot-toast';
 import { getExpiryStatus } from '../utils/expiryUtils';
 import { usePantry } from '../context/PantryContext';
 
-const API_URL = 'https://pantrypal-backend-bay.vercel.app/api';
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000/api'
+  : 'https://pantrypal-backend-bay.vercel.app/api';
 const authHeaders = () => ({
   'Content-Type': 'application/json',
   Authorization: `Bearer ${localStorage.getItem('pantrypal_token')}`

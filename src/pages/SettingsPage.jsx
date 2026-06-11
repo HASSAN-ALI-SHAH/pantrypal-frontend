@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Bell, Settings2, Database, Save, Trash2, Download } from 'lucide-react';
+import { User, Bell, Settings2, Database, Save, Trash2, Download, Lock, Mail, KeyRound, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usePantry } from '../context/PantryContext';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import Modal from '../components/ui/Modal';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -24,7 +25,13 @@ const SettingsPage = () => {
   const [profileForm, setProfileForm] = useState({ name: user?.name || '', email: user?.email || '' });
   const [savingProfile, setSavingProfile] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
-  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetStep, setResetStep] = useState(1); // 1 = credentials, 2 = OTP, 3 = final confirm
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetOtp, setResetOtp] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState('');
 
   const setP = (f) => (e) => setProfileForm(p => ({ ...p, [f]: e.target.value }));
   const setS = (f) => (v) => updateSettings({ [f]: v });
@@ -52,17 +59,99 @@ const SettingsPage = () => {
     toast.success('All items cleared');
   };
 
-  const handleReset = () => {
-    resetApp();
-    logout();
-    setResetDialogOpen(false);
-    toast('App reset. Please log in again.', { icon: '🔄' });
-    navigate('/login');
+  const handleCloseResetModal = () => {
+    setResetModalOpen(false);
+    setResetStep(1);
+    setResetEmail('');
+    setResetPassword('');
+    setResetOtp('');
+    setResetLoading(false);
+    setResetError('');
+  };
+
+  const handleInitiateReset = async (e) => {
+    if (e) e.preventDefault();
+    setResetLoading(true);
+    setResetError('');
+    try {
+      const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000/api'
+        : 'https://pantrypal-backend-bay.vercel.app/api';
+
+      const res = await fetch(`${apiBase}/settings/reset/initiate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('pantrypal_token')}`
+        },
+        body: JSON.stringify({ email: resetEmail.trim(), password: resetPassword })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Verification failed');
+      }
+      toast.success('Verification successful! OTP sent to your email. 📧');
+      setResetStep(2);
+      setResetPassword('');
+    } catch (err) {
+      setResetError(err.message || 'Failed to verify credentials');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleVerifyResetOTP = async (e) => {
+    if (e) e.preventDefault();
+    setResetLoading(true);
+    setResetError('');
+    try {
+      const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000/api'
+        : 'https://pantrypal-backend-bay.vercel.app/api';
+
+      const res = await fetch(`${apiBase}/settings/reset/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('pantrypal_token')}`
+        },
+        body: JSON.stringify({ otp: resetOtp.trim() })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'OTP verification failed');
+      }
+      toast.success('OTP verified successfully! ✅');
+      setResetStep(3);
+    } catch (err) {
+      setResetError(err.message || 'Invalid OTP');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleConfirmReset = async () => {
+    setResetLoading(true);
+    setResetError('');
+    try {
+      await resetApp();
+      logout();
+      handleCloseResetModal();
+      toast('App reset. Please log in again.', { icon: '🔄' });
+      navigate('/login');
+    } catch (err) {
+      setResetError(err.message || 'Failed to reset application');
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   const exportJSON = async () => {
     try {
-      const res = await fetch('https://pantrypal-backend-bay.vercel.app/api/settings/export', {
+      const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000/api'
+        : 'https://pantrypal-backend-bay.vercel.app/api';
+      const res = await fetch(`${apiBase}/settings/export`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -229,7 +318,7 @@ const SettingsPage = () => {
                         <p className="font-medium text-red-800">Reset App</p>
                         <p className="text-red-500 text-sm">Wipe everything and restore to factory defaults.</p>
                       </div>
-                      <Button variant="danger" icon={Trash2} onClick={() => setResetDialogOpen(true)}>Reset App</Button>
+                      <Button variant="danger" icon={Trash2} onClick={() => setResetModalOpen(true)}>Reset App</Button>
                     </div>
                   </div>
                 </div>
@@ -247,14 +336,102 @@ const SettingsPage = () => {
         message="This will permanently delete all pantry items. Your settings will remain."
         confirmLabel="Clear All"
       />
-      <ConfirmDialog
-        isOpen={resetDialogOpen}
-        onClose={() => setResetDialogOpen(false)}
-        onConfirm={handleReset}
-        title="Reset App?"
-        message="This will reset everything to defaults, clear all data, and log you out. This cannot be undone."
-        confirmLabel="Reset App"
-      />
+      <Modal
+        isOpen={resetModalOpen}
+        onClose={handleCloseResetModal}
+        title="Reset Application Data"
+        maxWidth="500px"
+      >
+        <div className="space-y-4">
+          {resetError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center gap-2">
+              ⚠️ {resetError}
+            </div>
+          )}
+
+          {resetStep === 1 && (
+            <form onSubmit={handleInitiateReset} className="space-y-4">
+              <p className="text-text-muted text-sm leading-relaxed">
+                For security reasons, resetting the application requires credentials verification. Please enter your account email and password to receive a verification OTP.
+              </p>
+              <Input
+                label="Email Address"
+                type="email"
+                placeholder="Enter your registered email"
+                icon={Mail}
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                required
+              />
+              <Input
+                label="Password"
+                type="password"
+                placeholder="Enter your password"
+                icon={Lock}
+                value={resetPassword}
+                onChange={(e) => setResetPassword(e.target.value)}
+                required
+              />
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="outline" type="button" onClick={handleCloseResetModal}>
+                  Cancel
+                </Button>
+                <Button variant="primary" type="submit" loading={resetLoading} disabled={!resetEmail || !resetPassword}>
+                  Send OTP Code
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {resetStep === 2 && (
+            <form onSubmit={handleVerifyResetOTP} className="space-y-4">
+              <p className="text-text-muted text-sm leading-relaxed">
+                We've sent a 6-digit OTP code to <strong className="text-text-dark">{resetEmail}</strong>. Please enter the verification code below to proceed.
+              </p>
+              <Input
+                label="Verification Code (OTP)"
+                type="text"
+                placeholder="Enter 6-digit OTP"
+                icon={KeyRound}
+                value={resetOtp}
+                onChange={(e) => setResetOtp(e.target.value)}
+                maxLength={6}
+                required
+              />
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="outline" type="button" onClick={handleCloseResetModal}>
+                  Cancel
+                </Button>
+                <Button variant="primary" type="submit" loading={resetLoading} disabled={resetOtp.length < 6}>
+                  Verify Code
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {resetStep === 3 && (
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 border-2 border-red-200 rounded-2xl flex items-start gap-3">
+                <ShieldCheck size={28} className="text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-red-800">Are you absolutely sure?</h4>
+                  <p className="text-red-700 text-sm mt-1 leading-relaxed">
+                    This will permanently delete all your items, grocery list, logs, settings, and log you out. This action is irreversible.
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="outline" type="button" onClick={handleCloseResetModal}>
+                  Cancel
+                </Button>
+                <Button variant="danger" type="button" onClick={handleConfirmReset} loading={resetLoading}>
+                  Yes, Reset Everything
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
     </motion.div>
   );
 };
